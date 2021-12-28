@@ -61,19 +61,38 @@ struct Images {
 	std::vector<Image> png;
 };
 
+static
+void
+usage()
+{
+	std::fprintf(stderr, "createico [option] <ICO file> <256x256 image file> [72x72 image file ...]\n");
+}
+
 } // !namespace
 
 int
 main(int argc, char ** argv)
 {
-	if (argc < 3 || argc > 4) {
-		std::fprintf(stderr, "createico <ICO file> <256x256 image file> [16x16 image file]\n");
+	if (argc < 3) {
+		usage();
 		return -1;
 	}
 
-	char const * const outputfile = argv[1];
-	char const * const filename256 = argv[2];
-	char const * const filename16 = argc == 4 ? argv[3] : nullptr;
+	int argn = 1;
+	bool overwrite = false;
+	if (argv[1][0] == '-') {
+		if (std::strcmp(argv[1], "-f") == 0) {
+			overwrite = true;
+			argn = 2;
+		} else {
+			usage();
+			return -1;
+		}
+	}
+
+	char const * const outputfile = argv[argn++];
+	char const * const filename256 = argv[argn++];
+	char const * const filename16 = argn < argc ? argv[argn] : nullptr;
 
 	constexpr unsigned const resolutions[] = { 256, 72, 48, 32, 16 };
 	constexpr unsigned const numImages = sizeof resolutions/sizeof(unsigned);
@@ -134,7 +153,7 @@ main(int argc, char ** argv)
 		}
 	}
 
-	if (std::fopen(outputfile, "r")) {
+	if (!overwrite && std::fopen(outputfile, "r")) {
 		std::fprintf(stderr, "'%s': error: file already exists, refusing to overwrite it\n", outputfile);
 		return -1;
 	}
